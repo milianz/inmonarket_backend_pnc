@@ -8,7 +8,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 public class UserDetailsImpl implements UserDetails {
@@ -33,7 +32,10 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     public static UserDetailsImpl build(User user) {
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()));
+        // Convert user role to Spring Security GrantedAuthority
+        List<GrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole())
+        );
 
         return new UserDetailsImpl(
                 user.getId(),
@@ -52,12 +54,12 @@ public class UserDetailsImpl implements UserDetails {
         return id;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public String getEmail() {
         return email;
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -67,6 +69,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
+        // Use email as the username for authentication
         return email;
     }
 
@@ -88,15 +91,5 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        UserDetailsImpl user = (UserDetailsImpl) o;
-        return Objects.equals(id, user.id);
     }
 }

@@ -8,10 +8,5 @@ import java.util.UUID;
 public interface iUserRepository extends iGenericRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
-
-    default Optional<User> findByUsername(String email) {
-        return findByEmail(email);
-    }
-
     Boolean existsByEmail(String email);
 }
