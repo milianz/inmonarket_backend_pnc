@@ -5,11 +5,9 @@ import org.milianz.imomarketbackend.Domain.Repsotories.iUserRepository;
 import org.milianz.imomarketbackend.Payload.Request.LoginRequest;
 import org.milianz.imomarketbackend.Payload.Request.SingupRequest;
 import org.milianz.imomarketbackend.Payload.Response.MessageResponse;
-import org.milianz.imomarketbackend.Payload.Response.UserInfoResponse;
+import org.milianz.imomarketbackend.Payload.Response.JwtResponse;
 import org.milianz.imomarketbackend.Security.JTW.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-
 public class AuthService {
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -41,15 +38,19 @@ public class AuthService {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+        String jwt = jwtUtils.generateJwtToken(userDetails);
 
-        UserInfoResponse userInfoResponse = new UserInfoResponse();
-        userInfoResponse.setId(userDetails.getId());
-        userInfoResponse.setEmail(userDetails.getEmail());
-        userInfoResponse.setUsername(userDetails.getName());
+        JwtResponse jwtResponse = new JwtResponse(
+                jwt,
+                userDetails.getId(),
+                userDetails.getName(),
+                userDetails.getEmail(),
+                userDetails.getAuthorities().stream()
+                        .map(item -> item.getAuthority())
+                        .toList()
+        );
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(userInfoResponse);
+        return ResponseEntity.ok(jwtResponse);
     }
 
     public ResponseEntity<?> registerUser(SingupRequest signUpRequest) {
@@ -72,8 +73,6 @@ public class AuthService {
     }
 
     public ResponseEntity<?> logoutUser() {
-        ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(new MessageResponse("You've been signed out!"));
+        return ResponseEntity.ok(new MessageResponse("You've been signed out!"));
     }
 }
